@@ -92,6 +92,11 @@ namespace Numeric
         double* data() { return (double*)m_velocityField.data(); }
         double const* data() const { return (double const*)m_velocityField.data(); }
 
+        size_t mpi_size()
+        {
+            return 2*m_velocityField.size();
+        }
+
         double getStep() const { return m_step; }
 
         void updateVelocityField( Simulation::Vortices const& t_vortices );

@@ -22,7 +22,7 @@ namespace Simulation
         Vortices( Vortices     && ) = default;
         ~Vortices()                 = default;
 
-        std::size_t numberOfVortices() const 
+        std::size_t numberOfVortices() const
         {
             return m_centers_and_intensities.size()/3;
         }
@@ -30,11 +30,11 @@ namespace Simulation
         point getCenter( std::size_t t_index ) const
         {
             assert(t_index < numberOfVortices() );
-            return { m_centers_and_intensities[3*t_index+0], 
+            return { m_centers_and_intensities[3*t_index+0],
                      m_centers_and_intensities[3*t_index+1] };
         }
 
-        double getIntensity( std::size_t t_index ) const 
+        double getIntensity( std::size_t t_index ) const
         {
             assert(t_index < numberOfVortices() );
             return m_centers_and_intensities[3*t_index+2];
@@ -46,14 +46,22 @@ namespace Simulation
             assert(t_intensity != 0);
             m_centers_and_intensities[3*t_index+0] = t_center.x;
             m_centers_and_intensities[3*t_index+1] = t_center.y;
-            m_centers_and_intensities[3*t_index+2] = t_intensity;           
+            m_centers_and_intensities[3*t_index+2] = t_intensity;
+        }
+
+        double* data() { return (double*)m_centers_and_intensities.data(); }
+        double const* data() const { return (double const*)m_centers_and_intensities.data(); }
+
+        size_t mpi_size()
+        {
+            return m_centers_and_intensities.size();
         }
 
         void removeVortex( std::size_t t_index )
         {
             assert(t_index < numberOfVortices() );
             std::size_t lastIndex = numberOfVortices()-1;
-            m_centers_and_intensities[3*t_index+0] = m_centers_and_intensities[3*lastIndex+0];    
+            m_centers_and_intensities[3*t_index+0] = m_centers_and_intensities[3*lastIndex+0];
             m_centers_and_intensities[3*t_index+1] = m_centers_and_intensities[3*lastIndex+1];
             m_centers_and_intensities[3*t_index+2] = m_centers_and_intensities[3*lastIndex+2];
             m_centers_and_intensities.resize(numberOfVortices()-3);

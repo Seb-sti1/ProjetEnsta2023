@@ -64,8 +64,8 @@ Il vous est parfaitement possible de créer vos propres fichiers de simulation. 
 Au début de la simulation, la fenêtre affiche l'état initial du champ de vitesse à gauche de l'écran et la position initiale des particules à droite de l'écran. La simulation n'avance pas en temps jusqu'à ce que vous appuyiez sur une des touches suivantes :
 
 - *flèche droite* : Avance d'un pas de temps
-- *flèche haut*   : multiplie par deux le pas de temps. **Attention** cependant, le schéma en temps utilisé est un schéma explicite, si bien que de trop gros pas de temps rend le schéma instable et la simulation devient irréaliste !
-- *flèche bas*    : Divise par deux le pas de temps. Plus le pas de temps est petit, plus la simulation en temps est précise. Par contre, la simulation d'un intervalle de temps donné sera en proportion du pas de temps choisi !
+- *flèche haut* : multiplie par deux le pas de temps. **Attention** cependant, le schéma en temps utilisé est un schéma explicite, si bien que de trop gros pas de temps rend le schéma instable et la simulation devient irréaliste !
+- *flèche bas* : Divise par deux le pas de temps. Plus le pas de temps est petit, plus la simulation en temps est précise. Par contre, la simulation d'un intervalle de temps donné sera en proportion du pas de temps choisi !
 - *touche P* : Les pas de temps s'incrémentent automatiquement à chaque rafraichissement de la fenêtre ;
 - *touche S* : Arrête l'incrément automatique du pas de temps.
 
@@ -110,3 +110,25 @@ Proposer sur papier une ou plusieurs stratégies pour cette parallélisation en 
 - Que se passe-t'il dans le cas d'un maillage de très grande dimension avec la ou les solutions que vous proposez ?
 - Que se passe-t'il dans le cas d'un très grand nombre de particules ?
 - Et dans le cas d'un maillage de très grande taille **ET** un très grand nombre de particules ?
+
+## Résultats
+
+### Séparation interface-graphique et calcul
+Avant la parallélisation la simulation fonctionne environ à 45 FPS. 
+Après parallélisation, la fréquence d'image est plutôt de 40-42 FPS. Cela
+peut paraitre contre intuitif (en dans un sens ça l'est), cependant il
+est très important de noter que le processus graphique passe ~85% à
+attendre les communications et communiquer avec le processus de calcul.
+Je pense donc que cette perte de performance est due au fait que mon pc
+étant plutôt puissant, le gain permit par la parallélisation est perdu
+par le cout de communication entre les deux processus. Néanmoins, le
+fait que le processus graphique passe beaucoup à attendre le calcul
+permet de supposer qu'une meilleure parallélisation de ce dernier
+permettra de gain de performance significatif : la marge d'amélioration
+est forte¹.
+
+
+¹Théoriquement on peut espérer (au maximum) de diminuer le temps
+pris par le processus graphique à `0.0233 * (1 - 0.85) = 0,003495` seconde
+soit 286 FPS !
+

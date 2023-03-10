@@ -2,8 +2,7 @@
 #include "vortex.hpp"
 using namespace Simulation;
 
-auto 
-Vortices::computeSpeed( point const& a_point ) const -> vector
+auto Vortices::computeSpeed( point const& a_point ) const -> vector
 {
     constexpr double thresholdDist = 1.E-5;
     vector speed{0.,0.};
