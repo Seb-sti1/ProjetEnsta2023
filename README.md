@@ -8,7 +8,7 @@ Avant la parallélisation la simulation fonctionne environ à 45 FPS.
 Après parallélisation, la fréquence d'image est plutôt de 40-42 FPS. Cela
 peut paraitre contre intuitif (en dans un sens ça l'est), cependant il
 est très important de noter que le processus graphique passe ~90% à
-attendre les communications et communiquer avec le processus de calcul¹
+attendre les communications et communiquer avec le processus de calcul¹.
 Je pense donc que cette perte de performance est due au fait que mon pc
 étant plutôt puissant, le gain permit par la parallélisation est perdu
 par le cout de communication entre les deux processus. Néanmoins, le
