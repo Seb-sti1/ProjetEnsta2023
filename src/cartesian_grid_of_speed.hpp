@@ -99,6 +99,9 @@ namespace Numeric
 
         double getStep() const { return m_step; }
 
+        /**
+         * @warning Affect every index of m_velocityField
+         */
         void updateVelocityField( Simulation::Vortices const& t_vortices );
         
         vector getVelocity( std::size_t iCell, std::size_t jCell ) const 
@@ -106,8 +109,14 @@ namespace Numeric
             return m_velocityField[iCell*m_width+jCell];
         }
 
+        /**
+         * @warning Doesn't affect m_velocityField
+         */
         point updatePosition( point const& pt ) const;
 
+        /**
+         * @warning Doesn't affect m_velocityField
+         */
         vector computeVelocityFor( point const& p ) const;
 
         CartesianGridOfSpeed& operator = ( CartesianGridOfSpeed const& ) = default;

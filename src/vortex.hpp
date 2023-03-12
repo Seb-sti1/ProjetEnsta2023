@@ -22,11 +22,17 @@ namespace Simulation
         Vortices( Vortices     && ) = default;
         ~Vortices()                 = default;
 
+        /**
+         * @warning Doesn't affect m_centers_and_intensities
+         */
         std::size_t numberOfVortices() const
         {
             return m_centers_and_intensities.size()/3;
         }
 
+        /**
+         * @warning Doesn't affect m_centers_and_intensities
+         */
         point getCenter( std::size_t t_index ) const
         {
             assert(t_index < numberOfVortices() );
@@ -34,12 +40,19 @@ namespace Simulation
                      m_centers_and_intensities[3*t_index+1] };
         }
 
+        /**
+         * @warning Doesn't affect m_centers_and_intensities
+         */
         double getIntensity( std::size_t t_index ) const
         {
             assert(t_index < numberOfVortices() );
             return m_centers_and_intensities[3*t_index+2];
         }
 
+
+        /**
+         * @warning Affect m_centers_and_intensities 3*t_index, 3*t_index + 1, 3*t_index + 2
+         */
         void setVortex( std::size_t t_index, point const & t_center, double t_intensity )
         {
             assert(t_index < numberOfVortices() );
@@ -57,6 +70,9 @@ namespace Simulation
             return m_centers_and_intensities.size();
         }
 
+        /**
+         * @warning Affect m_centers_and_intensities 3*t_index, 3*t_index + 1, 3*t_index + 2
+         */
         void removeVortex( std::size_t t_index )
         {
             assert(t_index < numberOfVortices() );
@@ -67,6 +83,9 @@ namespace Simulation
             m_centers_and_intensities.resize(numberOfVortices()-3);
         }
 
+        /**
+         * @warning Affect m_centers_and_intensities : add 3 space at the end
+         */
         void addNewVortex( point const& t_center, double t_intensity )
         {
             std::size_t lastIndex = numberOfVortices();
@@ -76,6 +95,10 @@ namespace Simulation
             m_centers_and_intensities[3*lastIndex+2] = t_intensity;
         }
 
+
+        /**
+         * @warning Doesn't affect m_centers_and_intensities
+         */
         vector computeSpeed( point const& a_point ) const;
 
         Vortices& operator = ( Vortices const& ) = default;

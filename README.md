@@ -118,17 +118,63 @@ Avant la parallélisation la simulation fonctionne environ à 45 FPS.
 Après parallélisation, la fréquence d'image est plutôt de 40-42 FPS. Cela
 peut paraitre contre intuitif (en dans un sens ça l'est), cependant il
 est très important de noter que le processus graphique passe ~85% à
-attendre les communications et communiquer avec le processus de calcul.
+attendre les communications et communiquer avec le processus de calcul¹
 Je pense donc que cette perte de performance est due au fait que mon pc
 étant plutôt puissant, le gain permit par la parallélisation est perdu
 par le cout de communication entre les deux processus. Néanmoins, le
 fait que le processus graphique passe beaucoup à attendre le calcul
 permet de supposer qu'une meilleure parallélisation de ce dernier
 permettra de gain de performance significatif : la marge d'amélioration
-est forte¹.
+est forte².
 
 
-¹Théoriquement on peut espérer (au maximum) de diminuer le temps
+¹De plus le benchmark n'a pas été réalisé au même moment, la charge du pc seule peut expliquer cette 
+variation.
+²Théoriquement on peut espérer (au maximum) de diminuer le temps
 pris par le processus graphique à `0.0233 * (1 - 0.85) = 0,003495` seconde
 soit 286 FPS !
+
+### Parallélisation en mémoire partagée
+
+Il y a globalement 5 boucles for dans les calculs :
+ 1. Celle qui bouge les points ([ici](https://github.com/Seb-sti1/ProjetEnsta2023/blob/share-mem-parallelization/src/runge_kutta.cpp#L15) et [là](https://github.com/Seb-sti1/ProjetEnsta2023/blob/share-mem-parallelization/src/runge_kutta.cpp#L44))
+ 2. [Celle qui déplace les vortices](https://github.com/Seb-sti1/ProjetEnsta2023/blob/share-mem-parallelization/src/runge_kutta.cpp#L61)
+ 3. [Celle qui les mets à jour](https://github.com/Seb-sti1/ProjetEnsta2023/blob/share-mem-parallelization/src/runge_kutta.cpp#L76)
+ 4. [La boucle de calcul de vitesse en point](https://github.com/Seb-sti1/ProjetEnsta2023/blob/share-mem-parallelization/src/vortex.cpp#L9)
+ 5. [Les deux boucles for pour mettre à jour le champ de vitesse](https://github.com/Seb-sti1/ProjetEnsta2023/blob/share-mem-parallelization/src/cartesian_grid_of_speed.cpp#L22) 
+
+
+Voici les temps moyens (en ms) de chacune de ces boucles for :
+
+| boucle for (cf liste ci-dessus) | Pour simpleSimulation.dat | Pour manyVortices.dat |
+|---------------------------------|---------------------------|-----------------------|
+| #1                              | 20,318                    | 37,20                 |
+| #2                              | 0,0013266                 | 0,00416               |
+| #3                              | 0,0000028                 | 0,0000027             |
+| #4 (testée indépendamment¹)     | 0,000112489               | 0,0002333             |
+| #5                              | 2,268723                  | 4,938215              |
+
+
+¹La boucle #4 étant utilisée dans certaines des autres boucles, il est obligatoire de ne pas la
+modifier pour tester de manière fiable les autres boucles.
+
+Il est clair qu'il serait bénéfique de paralléliser la boucle #1. Le temps de la boucle #5
+s'explique à 100% par le temps pris par #4 (complexité en O(nx²*O(#4))). Concernant la 
+boucle #2 ~25% du temps est passée dans #4. Cependant, paralléliser la boucle #4 ne me 
+semble pas être une si bonne idée : il n'y a au maximum que 5 tourbillons. C'est aussi le cas de #2, et 
+le temps d'exécution de #3 est dérisoire pour qu'il soit utile de paralléliser la boucle.
+**Finalement, je suis d'avis de paralléliser #1, #5.**
+
+Pour OMP_NUM_THREADS=8, les nouveaux temps (en ms, speed entre parenthèse) sont :
+
+
+| boucle for (cf liste ci-dessus) | Pour simpleSimulation.dat | Pour manyVortices.dat |
+|---------------------------------|---------------------------|-----------------------|
+| #1                              | 12,094 (168%)             | 24,083 (154%)         |
+| #5                              | 1,9969 (113%)             | 4,7844 (103%)         |
+
+L'amélioration sur la boucle #1 est notable ce qui n'est pas vraiment le cas pour #5.
+
+**L'amélioration globale permet d'augmenter les FPS à ~70. Cependant, le processus
+d'affichage passe toujours ~80% du temps à attendre et communiquer.** 
 
