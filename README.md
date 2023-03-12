@@ -1,4 +1,45 @@
 # Projet Ensta 2023
+
+## Résultats
+
+### Séparation interface-graphique et calcul
+Avant la parallélisation la simulation fonctionne environ à 45 FPS.
+Après parallélisation, la fréquence d'image est plutôt de 40-42 FPS. Cela
+peut paraitre contre intuitif (en dans un sens ça l'est), cependant il
+est très important de noter que le processus graphique passe ~90% à
+attendre les communications et communiquer avec le processus de calcul¹.
+Je pense donc que cette perte de performance est due au fait que mon pc
+étant plutôt puissant, le gain permit par la parallélisation est perdu
+par le cout de communication entre les deux processus. Néanmoins, le
+fait que le processus graphique passe beaucoup à attendre le calcul
+permet de supposer qu'une meilleure parallélisation de ce dernier
+permettra de gain de performance significatif : la marge d'amélioration
+est forte².
+
+
+¹De plus le benchmark n'a pas été réalisé au même moment, la charge du pc seule peut expliquer cette
+variation.
+²Théoriquement on peut espérer (au maximum) de diminuer le temps
+pris par le processus graphique à `0.0233 * (1 - 0.9) = 0,0023` seconde soit 434 FPS !
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## Modélisation de tourbillons sur un tore en deux dimensions
 
 Le projet consiste à optimiser et paralléliser un code simulant des tourbillons sur un tore en deux dimensions.
@@ -110,25 +151,4 @@ Proposer sur papier une ou plusieurs stratégies pour cette parallélisation en 
 - Que se passe-t'il dans le cas d'un maillage de très grande dimension avec la ou les solutions que vous proposez ?
 - Que se passe-t'il dans le cas d'un très grand nombre de particules ?
 - Et dans le cas d'un maillage de très grande taille **ET** un très grand nombre de particules ?
-
-## Résultats
-
-### Séparation interface-graphique et calcul
-Avant la parallélisation la simulation fonctionne environ à 45 FPS. 
-Après parallélisation, la fréquence d'image est plutôt de 40-42 FPS. Cela
-peut paraitre contre intuitif (en dans un sens ça l'est), cependant il
-est très important de noter que le processus graphique passe ~85% à
-attendre les communications et communiquer avec le processus de calcul.
-Je pense donc que cette perte de performance est due au fait que mon pc
-étant plutôt puissant, le gain permit par la parallélisation est perdu
-par le cout de communication entre les deux processus. Néanmoins, le
-fait que le processus graphique passe beaucoup à attendre le calcul
-permet de supposer qu'une meilleure parallélisation de ce dernier
-permettra de gain de performance significatif : la marge d'amélioration
-est forte¹.
-
-
-¹Théoriquement on peut espérer (au maximum) de diminuer le temps
-pris par le processus graphique à `0.0233 * (1 - 0.85) = 0,003495` seconde
-soit 286 FPS !
 
