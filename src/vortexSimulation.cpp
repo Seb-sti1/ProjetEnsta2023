@@ -14,7 +14,6 @@
 #include "screen.hpp"
 
 #include <mpi/mpi.h>
-#include <thread>
 
 auto readConfigFile( std::ifstream& input )
 {
