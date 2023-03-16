@@ -26,7 +26,7 @@ pris par le processus graphique à `0.0233 * (1 - 0.9) = 0,0023` seconde soit 43
 ### Parallélisation en mémoire partagée
 
 Il y a globalement 5 boucles for dans les calculs :
-1. Celle qui bouge les points ([ici](https://github.com/Seb-sti1/ProjetEnsta2023/blob/share-mem-parallelization/src/runge_kutta.cpp#L15) et [là](https://github.com/Seb-sti1/ProjetEnsta2023/blob/share-mem-parallelization/src/runge_kutta.cpp#L44))
+1. Celles qui bougent les points ([ici](https://github.com/Seb-sti1/ProjetEnsta2023/blob/share-mem-parallelization/src/runge_kutta.cpp#L15) et [là](https://github.com/Seb-sti1/ProjetEnsta2023/blob/share-mem-parallelization/src/runge_kutta.cpp#L44))
 2. [Celle qui déplace les vortices](https://github.com/Seb-sti1/ProjetEnsta2023/blob/share-mem-parallelization/src/runge_kutta.cpp#L61)
 3. [Celle qui les mets à jour](https://github.com/Seb-sti1/ProjetEnsta2023/blob/share-mem-parallelization/src/runge_kutta.cpp#L76)
 4. [La boucle de calcul de vitesse en point](https://github.com/Seb-sti1/ProjetEnsta2023/blob/share-mem-parallelization/src/vortex.cpp#L9)
@@ -69,26 +69,46 @@ d'affichage passe toujours ~80% du temps à attendre et communiquer.**
 
 ### Parallélisation en mémoire distribuée et partagée des calculs
 
-Cette partie est probablement la plus complexe à implémenter.
+Cette partie est probablement la plus complexe à implémenter. Voici la manière dont je 
+vais organiser les communications :
+
+```mermaid
+sequenceDiagram
+
+    box lightgray Affichage
+    participant 1
+    end
+    box Calculs
+    participant 2
+    participant 3
+    participant 4
+    end
+
+    loop
+    1->>2: Entrées client (animate, dt, ...)
+    activate 2
+    Note over 1: Affichage
+    2->>3: 1/3 des particules
+    activate 3
+    2->>4: 1/3 des particules
+    activate 4
+    Note over 4,3: Déplacements des points
+    Note over 2: Déplacements des points<br>et des vortex
+    3->>2: Particules déplacées
+    deactivate 3
+    4->>2: Particules déplacées
+    deactivate 4
+    2->>1: Etat suivant de la simulation
+    deactivate 2
+    end
+```
+
+    
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+<hr style="border:5px solid gray">
 
 
 

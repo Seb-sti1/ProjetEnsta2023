@@ -81,6 +81,12 @@ namespace Geometry
             return 2*m_setOfPoints.size();
         }
 
+        size_t size()
+        {
+            return 2*m_setOfPoints.size();
+        }
+
+
         CloudOfPoints& operator = ( CloudOfPoints const& ) = default;
         CloudOfPoints& operator = ( CloudOfPoints     && ) = default;
     private:
