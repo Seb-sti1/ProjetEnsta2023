@@ -14,7 +14,6 @@
 #include "screen.hpp"
 
 #include <mpi/mpi.h>
-#include <thread>
 
 auto readConfigFile( std::ifstream& input )
 {
@@ -142,6 +141,8 @@ int main(int argc, char* argv[] )
 
         Graphisme::Screen myScreen({resx, resy}, {grid.getLeftBottomVertex(), grid.getRightTopVertex()});
 
+        std::chrono::duration<double> diff;
+
         while (running) {
             auto start = std::chrono::system_clock::now();
 
@@ -205,8 +206,13 @@ int main(int argc, char* argv[] )
             myScreen.displayVelocityField(grid, vortices);
             myScreen.displayParticles(grid, vortices, cloud);
 
+            std::string str_fps = std::string("FPS : ") + std::to_string(1. / diff.count());
+            myScreen.drawText(str_fps, Geometry::Point<double>{300, double(myScreen.getGeometry().second - 96)});
+            myScreen.display();
+
             auto beginning = std::chrono::system_clock::now();
             if (animate | advance) {
+                // get the next state
                 if (isMobile) {
                     MPI_Recv(grid.data(), grid.mpi_size(), MPI_DOUBLE, 1, 0, global, &status);
                     MPI_Recv(vortices.data(), vortices.mpi_size(), MPI_DOUBLE, 1, 0, global, &status);
@@ -219,15 +225,11 @@ int main(int argc, char* argv[] )
             std::chrono::duration<double> recvDuration = std::chrono::system_clock::now() - beginning;
 
             auto end = std::chrono::system_clock::now();
-            std::chrono::duration<double> diff = end - start;
+            diff = end - start;
 
             if (animate | advance) {
                 std::cout << "[0] Took " << diff.count() << "\t" << recvDuration.count() * 100 / diff.count() << "%" << std::endl;
             }
-
-            std::string str_fps = std::string("FPS : ") + std::to_string(1. / diff.count());
-            myScreen.drawText(str_fps, Geometry::Point<double>{300, double(myScreen.getGeometry().second - 96)});
-            myScreen.display();
         }
     }
     else if (rank == 1)
