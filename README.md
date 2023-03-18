@@ -3,6 +3,9 @@
 ## Résultats
 
 ### Séparation interface-graphique et calcul
+
+_Voir la branche sep-graphic-calculation_
+
 Avant la parallélisation la simulation fonctionne environ à 45 FPS.
 Après parallélisation, la fréquence d'image est plutôt de 40-42 FPS. Cela
 peut paraitre contre intuitif (en dans un sens ça l'est), cependant il
@@ -24,6 +27,8 @@ pris par le processus graphique à `0.0233 * (1 - 0.9) = 0,0023` seconde soit 43
 
 
 ### Parallélisation en mémoire partagée
+
+_Voir la branche share-mem-parallelization_
 
 Il y a globalement 5 boucles for dans les calculs :
 1. Celles qui bougent les points ([ici](https://github.com/Seb-sti1/ProjetEnsta2023/blob/share-mem-parallelization/src/runge_kutta.cpp#L15) et [là](https://github.com/Seb-sti1/ProjetEnsta2023/blob/share-mem-parallelization/src/runge_kutta.cpp#L44))
@@ -69,6 +74,8 @@ d'affichage passe toujours ~80% du temps à attendre et communiquer.**
 
 ### Parallélisation en mémoire distribuée et partagée des calculs
 
+_Voir la branche mpi-calc_
+
 Cette partie est probablement la plus complexe à implémenter. Voici la manière dont je 
 vais organiser les communications :
 
@@ -103,8 +110,14 @@ sequenceDiagram
     end
 ```
 
-    
+Il est important de noter que pour cette partie, il faudrait utiliser un réseau
+d'ordinateur pour que le parallélisme puisse avoir assez de thread, coeurs 
+et processeurs.
 
+Cela étant dit, pour 4 threads OMP et 4 processus MPI, il y a tout
+de même un gain de performance : On avoisine les 145 FPS ! Le processus
+d'affichage ne passe plus que ~50% du temps à attendre les communications
+et communiquer.
 
 
 

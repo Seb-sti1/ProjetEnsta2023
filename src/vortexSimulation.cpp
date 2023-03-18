@@ -160,6 +160,8 @@ int main(int argc, char* argv[] )
 
         Graphisme::Screen myScreen({resx, resy}, {grid.getLeftBottomVertex(), grid.getRightTopVertex()});
 
+        std::chrono::duration<double> diff;
+
         while (running) {
             auto start = std::chrono::system_clock::now();
 
@@ -223,29 +225,29 @@ int main(int argc, char* argv[] )
             myScreen.displayVelocityField(grid, vortices);
             myScreen.displayParticles(grid, vortices, cloud);
 
+            std::string str_fps = std::string("FPS : ") + std::to_string(1. / diff.count());
+            myScreen.drawText(str_fps, Geometry::Point<double>{300, double(myScreen.getGeometry().second - 96)});
+            myScreen.display();
+
             auto beginning = std::chrono::system_clock::now();
             if (animate | advance) {
+                // get the next state
                 if (isMobile) {
                     MPI_Bcast(grid.data(), grid.mpi_size(), MPI_DOUBLE, 1, global);
                     MPI_Bcast(vortices.data(), vortices.mpi_size(), MPI_DOUBLE, 1, global);
                     MPI_Recv(cloud.data(), cloud.mpi_size(), MPI_DOUBLE, 1, 0, global, &status);
                 } else {
-                    MPI_Bcast(grid.data(), grid.mpi_size(), MPI_DOUBLE, 1, global);
                     MPI_Recv(cloud.data(), cloud.mpi_size(), MPI_DOUBLE, 1, 0, global, &status);
                 }
             }
             std::chrono::duration<double> recvDuration = std::chrono::system_clock::now() - beginning;
 
             auto end = std::chrono::system_clock::now();
-            std::chrono::duration<double> diff = end - start;
+            diff = end - start;
 
             if (animate | advance) {
-                //std::cout << "[0] Took " << diff.count() << "\t" << recvDuration.count() * 100 / diff.count() << "%" << std::endl;
+                std::cout << "[0] Took " << diff.count() << "\tcom: " << recvDuration.count() << std::endl;
             }
-
-            std::string str_fps = std::string("FPS : ") + std::to_string(1. / diff.count());
-            myScreen.drawText(str_fps, Geometry::Point<double>{300, double(myScreen.getGeometry().second - 96)});
-            myScreen.display();
         }
     }
     else if (rank == 1)
@@ -268,24 +270,27 @@ int main(int argc, char* argv[] )
                 MPI_Recv(&running, 1, MPI_CXX_BOOL, 0, 0, global, &status);
                 MPI_Recv(&dt, 1, MPI_DOUBLE, 0, 0, global, &status);
 
-                //TODO broadcast to calcComm
-
                 if (!running)
                     break;
             }
 
             if (animate | advance) {
-                int localSize = batchSizes[calcRank];
+
+                auto beginning = std::chrono::system_clock::now();
+                MPI_Bcast(&running, 1, MPI_CXX_BOOL, 0, calcComm);
+                MPI_Bcast(&dt, 1, MPI_DOUBLE, 0, calcComm);
 
                 // send cloud of points
-                std::cout << "[" << rank << "] is scattering" << std::endl;
+                int localSize = batchSizes[calcRank];
                 Geometry::CloudOfPoints local_cloud(localSize);
                 MPI_Scatterv(cloud.data(), batchSizes.data(), displs.data(), MPI_DOUBLE,
                              local_cloud.data(), localSize, MPI_DOUBLE, 0, calcComm);
+                calcAndSendDura = std::chrono::system_clock::now() - beginning;
+
 
                 // calculate points
                 Geometry::CloudOfPoints new_local_cloud(localSize);
-                auto beginning = std::chrono::system_clock::now();
+                beginning = std::chrono::system_clock::now();
                 if (isMobile) {
                     new_local_cloud = Numeric::solve_RK4_movable_vortices(dt, grid, vortices, local_cloud);
                 } else {
@@ -294,8 +299,7 @@ int main(int argc, char* argv[] )
                 calcDura = std::chrono::system_clock::now() - beginning;
 
                 // gather all points
-                std::cout << "[" << rank << "] is gathering" << std::endl;
-
+                beginning = std::chrono::system_clock::now();
                 MPI_Gatherv(new_local_cloud.data(), localSize, MPI_DOUBLE, cloud.data(), batchSizes.data(),
                             displs.data(), MPI_DOUBLE, 0, calcComm);
 
@@ -305,33 +309,25 @@ int main(int argc, char* argv[] )
                     MPI_Bcast(vortices.data(), vortices.mpi_size(), MPI_DOUBLE, 1, global);
                     MPI_Isend(cloud.data(), cloud.mpi_size(), MPI_DOUBLE, 0, 0, global, &request);
                 } else {
-                    MPI_Bcast(grid.data(), grid.mpi_size(), MPI_DOUBLE, 1, global);
                     MPI_Isend(cloud.data(), cloud.mpi_size(), MPI_DOUBLE, 0, 0, global, &request);
                 }
-                calcAndSendDura = std::chrono::system_clock::now() - beginning;
+                calcAndSendDura += std::chrono::system_clock::now() - beginning;
 
             }
             auto end = std::chrono::system_clock::now();
             std::chrono::duration<double> diff = end - start;
 
-            //std::cout << "[1] Took " << diff.count() << "\t" << (calcAndSendDura.count() - calcDura.count()) * 100/diff.count() << "%" << std::endl;
+            std::cout << "[1] Took " << diff.count() << "\tcom: " << calcAndSendDura.count() << "\tcalc: " << calcDura.count() << std::endl;
         }
     }
     else
     {
         while (running)
         {
-            int flag = 0;
-            MPI_Iprobe(0, 0, global, &flag, &status);
-            if (flag)
-            {
-                std::cout << "[" << rank << "] Reading" << std::endl;
-                MPI_Bcast(&running, 1, MPI_CXX_BOOL, 0, global);
-                MPI_Bcast(&dt, 1, MPI_DOUBLE, 0, global);
-
-                if (!running)
-                    break;
-            }
+            MPI_Bcast(&running, 1, MPI_CXX_BOOL, 0, calcComm);
+            if (!running)
+                break;
+            MPI_Bcast(&dt, 1, MPI_DOUBLE, 0, calcComm);
 
             // receive particules
             int localSize = batchSizes[calcRank];
@@ -350,8 +346,6 @@ int main(int argc, char* argv[] )
             if (isMobile) {
                 MPI_Bcast(grid.data(), grid.mpi_size(), MPI_DOUBLE, 1, global);
                 MPI_Bcast(vortices.data(), vortices.mpi_size(), MPI_DOUBLE, 1, global);
-            } else {
-                MPI_Bcast(grid.data(), grid.mpi_size(), MPI_DOUBLE, 1, global);
             }
         }
     }
